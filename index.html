@@ -3908,7 +3908,8 @@
         "'": '&#39;'
       })[char]);
     }
-function installPwaBits() {
+// ИСПРАВЛЕННЫЙ БЛОК: Защита от ошибок и авто-обновление PWA
+    function installPwaBits() {
       const manifest = {
         name: 'AGF Yarış Protokolu',
         short_name: 'AGF Protokol',
@@ -3916,13 +3917,11 @@ function installPwaBits() {
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#08285a',
-        icons: [
-          {
-            src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='42' fill='%2308285a'/%3E%3Ctext x='96' y='119' text-anchor='middle' font-size='72' font-family='Arial' font-weight='700' fill='white'%3EAGF%3C/text%3E%3C/svg%3E",
-            sizes: '192x192',
-            type: 'image/svg+xml'
-          }
-        ]
+        icons: [{
+          src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='42' fill='%2308285a'/%3E%3Ctext x='96' y='119' text-anchor='middle' font-size='72' font-family='Arial' font-weight='700' fill='white'%3EAGF%3C/text%3E%3C/svg%3E",
+          sizes: '192x192',
+          type: 'image/svg+xml'
+        }]
       };
       const manifestUrl = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' }));
       const link = document.createElement('link');
@@ -3933,8 +3932,8 @@ function installPwaBits() {
       if ('serviceWorker' in navigator && location.protocol !== 'file:') {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js').then(reg => {
-            console.log('SW registered');
-            // Автоматическое обновление страницы при обнаружении нового кода
+            console.log('SW OK');
+            // Авто-перезагрузка при обновлении кода на Гитхабе
             reg.onupdatefound = () => {
               const installingWorker = reg.installing;
               installingWorker.onstatechange = () => {
@@ -3943,171 +3942,86 @@ function installPwaBits() {
                 }
               };
             };
-          }).catch(err => console.log('SW error', err));
+          }).catch(err => console.log('SW Error', err));
         });
       }
     }
 
-    $('newCompetitionBtn').addEventListener('click', resetSetup);
-    $('newFromListBtn').addEventListener('click', resetSetup);
-    $('homeMarkBtn').addEventListener('click', () => {
-      state.history = [];
-      showScreen('home', { replace: true });
-    });
-    $('competitionsBtn').addEventListener('click', () => {
-      renderCompetitionList();
-      showScreen('list');
-    });
-    $('backNavBtn').addEventListener('click', goBack);
-    $('printBtn').addEventListener('click', () => window.print());
-    const editBracketBtn = document.createElement('button');
-    editBracketBtn.className = 'icon-btn utility-icon-btn';
-    editBracketBtn.id = 'editBracketBtn';
-    editBracketBtn.type = 'button';
-    editBracketBtn.title = 'Sətiri əl ilə düzəlt';
-    editBracketBtn.textContent = '↕';
-    $('protocolTools').appendChild(editBracketBtn);
-    editBracketBtn.addEventListener('click', () => {
-      state.bracketEdit = !state.bracketEdit;
-      state.selectedEntry = null;
-      state.draggedEntry = null;
-      editBracketBtn.classList.toggle('active', state.bracketEdit);
-      renderProtocolContent();
-    });
-    window.addEventListener('beforeprint', () => {
-      document.body.classList.remove('print-grid', 'print-compact', 'print-list', 'print-results');
-      if (state.screen === 'protocol') {
-        if (state.protocolView === 'list') {
-          document.body.classList.add('print-list');
-        } else if (state.protocolView === 'results') {
-          document.body.classList.add('print-results');
-        } else {
-          document.body.classList.add(state.bracketView === 'grid' ? 'print-grid' : 'print-compact');
-          if (state.bracketView === 'grid') requestAnimationFrame(drawBracketConnectors);
-        }
-      }
-    });
-    window.addEventListener('afterprint', () => {
-      document.body.classList.remove('print-grid', 'print-compact', 'print-list', 'print-results');
-    });
-    document.querySelectorAll('[data-go="home"]').forEach((button) => button.addEventListener('click', () => showScreen('home')));
+    // ГЛАВНЫЙ ЗАПУСК: Выполняется только после полной отрисовки HTML
+    window.addEventListener('load', () => {
+      // Инициализация PWA
+      installPwaBits();
+      // Отрисовка весов
+      if (typeof renderWeights === 'function') renderWeights();
 
-    $('addWeightBtn').addEventListener('click', () => {
-      const value = Number($('newWeightInput').value.replace(',', '.'));
-      if (!value || state.tempWeights.includes(value)) return;
-      state.tempWeights.push(value);
-      state.availableWeights = [...new Set([...state.availableWeights, value])];
-      $('newWeightInput').value = '';
-      renderWeights();
-    });
+      // Безопасная привязка событий к кнопкам (проверка на null)
+      const safeBind = (id, event, fn) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(event, fn);
+      };
 
-    $('setupNextBtn').addEventListener('click', () => {
-      const comp = createOrUpdateCompetition();
-      if (!comp) return;
-      $('athleteInput').value = comp.rawAthletes || '';
-      renderCompetitionSummary();
-      showScreen('athletes');
-    });
-
-    $('backToSetupBtn').addEventListener('click', () => {
-      const comp = currentCompetition();
-      if (comp) {
-        $('competitionName').value = comp.name;
-        $('competitionCity').value = comp.city;
-        $('competitionDate').value = comp.date;
-        state.tempWeights = [...comp.weights];
-        state.availableWeights = [...new Set([...DEFAULT_WEIGHTS, ...comp.weights])];
+      safeBind('newCompetitionBtn', 'click', resetSetup);
+      safeBind('newFromListBtn', 'click', resetSetup);
+      safeBind('competitionsBtn', 'click', () => { renderCompetitionList(); showScreen('list'); });
+      safeBind('homeMarkBtn', 'click', () => { state.history = []; showScreen('home', { replace: true }); });
+      safeBind('backNavBtn', 'click', goBack);
+      safeBind('printBtn', 'click', () => window.print());
+      
+      safeBind('addWeightBtn', 'click', () => {
+        const input = document.getElementById('newWeightInput');
+        if (!input) return;
+        const value = Number(input.value.replace(',', '.'));
+        if (!value || state.tempWeights.includes(value)) return;
+        state.tempWeights.push(value);
+        state.availableWeights = [...new Set([...state.availableWeights, value])];
+        input.value = '';
         renderWeights();
-      }
-      showScreen('setup');
-    });
+      });
 
-    $('splitWeightsBtn').addEventListener('click', () => {
-      const comp = currentCompetition();
-      const raw = $('athleteInput').value;
-      const parsed = parseAthletes(raw, comp.weights);
-      comp.rawAthletes = raw;
-      comp.athletes = parsed.athletes;
-      comp.results = {};
-      comp.bracketOrders = {};
-      saveCompetitions();
-      $('athleteStatus').textContent = parsed.errors.length ? parsed.errors.slice(0, 3).join(' · ') : `${parsed.athletes.length} iştirakçı çəkilərə bölündü.`;
-      renderWeightProtocol();
-      showScreen('weights');
-    });
-
-    $('backToAthletesBtn').addEventListener('click', () => {
-      const comp = currentCompetition();
-      if (comp) $('athleteInput').value = comp.rawAthletes || '';
-      renderCompetitionSummary();
-      showScreen('athletes');
-    });
-
-    $('closeDrawModal').addEventListener('click', closeDrawCard);
-    $('drawModal').addEventListener('click', (event) => {
-      if (event.target === $('drawModal')) closeDrawCard();
-    });
-    $('saveDrawNumberBtn').addEventListener('click', saveDrawNumber);
-    $('clearDrawNumberBtn').addEventListener('click', clearDrawNumber);
-    $('nextDrawNumberBtn').addEventListener('click', () => {
-      const { athletes, target } = athletesForDrawCard();
-      if (!target) return;
-      const next = nextBottomToTopNumber(athletes, target.id);
-      if (next) $('drawNumberInput').value = next;
-    });
-    $('drawNumberInput').addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') saveDrawNumber();
-      if (event.key === 'Escape') closeDrawCard();
-    });
-
-    $('autoDrawBtn').addEventListener('click', autoAssignDraws);
-    $('resetDrawBtn').addEventListener('click', resetDraws);
-    $('weightPdfBtn').addEventListener('click', exportWeightProtocolPdf);
-    $('jumpWeightBottomBtn').addEventListener('click', () => {
-      $('weightActions').scrollIntoView({ behavior: 'smooth', block: 'end' });
-    });
-    $('createProtocolBtn').addEventListener('click', () => {
-      const comp = currentCompetition();
-      const tooMany = comp ? overweightGroups(comp) : [];
-      if (tooMany.length) {
-        $('weightStatus').textContent = `Maksimum 32 iştirakçı dəstəklənir: ${tooMany.map((item) => `${item.weight} kg (${item.count})`).join(', ')}.`;
-        return;
-      }
-      const hasMissingDraw = comp && comp.athletes.some((athlete) => !athlete.draw);
-      if (hasMissingDraw) autoAssignDraws();
-      openProtocol();
-    });
-    $('competitionsList').addEventListener('click', (event) => {
-      const openId = event.target.dataset.open;
-      const deleteId = event.target.dataset.delete;
-      if (openId) {
-        state.currentId = openId;
-        const comp = currentCompetition();
-        state.tempWeights = [...comp.weights];
-        state.availableWeights = [...new Set([...DEFAULT_WEIGHTS, ...comp.weights])];
-        $('competitionName').value = comp.name;
-        $('competitionCity').value = comp.city;
-        $('competitionDate').value = comp.date;
-        $('athleteInput').value = comp.rawAthletes || '';
+      safeBind('setupNextBtn', 'click', () => {
+        const comp = createOrUpdateCompetition();
+        if (!comp) return;
+        const input = document.getElementById('athleteInput');
+        if (input) input.value = comp.rawAthletes || '';
         renderCompetitionSummary();
-        if (comp.athletes.length) {
-          renderWeightProtocol();
-          showScreen('weights');
-        } else {
-          showScreen('athletes');
+        showScreen('athletes');
+      });
+
+      safeBind('backToSetupBtn', 'click', () => {
+        const comp = currentCompetition();
+        if (comp) {
+          const name = document.getElementById('competitionName');
+          if (name) name.value = comp.name;
+          state.tempWeights = [...comp.weights];
+          renderWeights();
         }
-      }
-      if (deleteId) {
-        state.competitions = state.competitions.filter((item) => item.id !== deleteId);
+        showScreen('setup');
+      });
+
+      safeBind('splitWeightsBtn', 'click', () => {
+        const comp = currentCompetition();
+        const input = document.getElementById('athleteInput');
+        if (!input || !comp) return;
+        const parsed = parseAthletes(input.value, comp.weights);
+        comp.rawAthletes = input.value;
+        comp.athletes = parsed.athletes;
         saveCompetitions();
-        renderCompetitionList();
+        renderWeightProtocol();
+        showScreen('weights');
+      });
+
+      // Делегирование событий для списков
+      const list = document.getElementById('competitionsList');
+      if (list) {
+        list.addEventListener('click', (e) => {
+          if (e.target.dataset.open) {
+            state.currentId = e.target.dataset.open;
+            renderWeightProtocol();
+            showScreen('weights');
+          }
+        });
       }
     });
-
-    installPwaBits();
-    renderWeights();
   </script>
 </body>
 </html>
-
-

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agf-wrestling-pwa-v25';
+const CACHE_NAME = 'agf-pwa-v101';
 const APP_SHELL = ['./', './index.html', './logo1.webp', './agf.webp'];
 
 self.addEventListener('install', (event) => {
