@@ -1,16 +1,15 @@
-const CACHE_NAME = 'agf-pwa-v102'; // Версия увеличена для обновления иконок у клиента
+const CACHE_NAME = 'agf-pwa-v103'; // Увеличили версию для сброса кэша
 const APP_SHELL = [
   './',
   './index.html',
-  './logo1.webp',
-  './agf.webp' // Новый основной логотип приложения
+  './agf.webp' // Твоя новая иконка
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
+      .then(() => self.skipWaiting()) // Принудительная активация
   );
 });
 

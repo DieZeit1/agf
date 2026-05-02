@@ -7,7 +7,6 @@
   <title>Azərbaycan Güləş Federasiyası | Yarış Protokolu</title>
   <link rel="apple-touch-icon" href="agf.webp">
   <style>
-    /* Стили остаются без изменений согласно вашему исходному коду */
     :root {
       --bg: #eef3f8; --paper: #fbfdff; --ink: #0b1733; --muted: #62718a;
       --line: #cfdae8; --blue: #08285a; --blue-2: #0e3b7a; --blue-soft: #e5eef9;
@@ -33,7 +32,33 @@
     .icon-btn { min-width: 42px; width: 42px; padding: 0; background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.18); }
     main { width: min(1180px, 100%); max-width: 100%; margin: 0 auto; padding: 18px 14px 40px; }
     .screen { display: none; } .screen.active { display: block; }
-    /* Остальные стили из вашего Source 3... */
+    .hero { min-height: calc(100vh - 86px); display: grid; align-content: center; gap: 18px; padding: 16px 0 34px; }
+    .home-title h1 { margin: 0; color: var(--blue); font-size: clamp(30px, 7vw, 58px); line-height: 1.02; }
+    .home-title p { margin: 12px 0 0; color: var(--muted); font-size: 16px; max-width: 620px; }
+    .home-grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+    .primary, .secondary, .ghost { padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; text-align: center; }
+    .primary { background: var(--blue); color: #fff; box-shadow: 0 10px 24px rgba(8,40,90,0.18); }
+    .secondary { background: var(--paper); color: var(--blue); border: 1px solid var(--line); }
+    .ghost { background: var(--blue-soft); color: var(--blue); }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .panel-head { padding: 15px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; background: linear-gradient(180deg, #ffffff 0%, #f5f8fc 100%); }
+    .panel-head h2 { margin: 0; color: var(--blue); font-size: 21px; }
+    .panel-body { padding: 16px; }
+    .form-grid { display: grid; gap: 14px; }
+    label { display: grid; gap: 6px; color: var(--blue); font-weight: 700; font-size: 13px; }
+    input, textarea { width: 100%; min-height: 44px; border: 1px solid #b9c7d8; border-radius: var(--radius); padding: 10px 11px; outline: none; }
+    textarea { resize: vertical; min-height: 200px; }
+    .weights { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+    .weight-check { display: flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 10px; border-radius: var(--radius); background: #fff; border: 1px solid #cddcf1; cursor: pointer; }
+    .weight-check input { width: 18px; height: 18px; }
+    .inline-add { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 10px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; }
+    .list { display: grid; gap: 10px; }
+    .competition-row { padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; display: flex; justify-content: space-between; align-items: center; }
+    .meta { color: var(--muted); font-size: 13px; }
+    .modal { position: fixed; inset: 0; z-index: 50; display: none; place-items: end center; padding: 14px; background: rgba(6, 20, 48, 0.38); }
+    .modal.active { display: grid; }
+    .draw-card { width: min(440px, 100%); background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,0.22); }
   </style>
 </head>
 <body>
@@ -53,7 +78,6 @@
     </header>
 
     <main>
-      <!-- Секции экранов из вашего Source 3... -->
       <section class="screen active" id="homeScreen">
         <div class="hero">
           <div class="home-title">
@@ -66,61 +90,116 @@
           </div>
         </div>
       </section>
-      <!-- Добавьте здесь остальные секции (setupScreen, listScreen, athleteScreen, weightScreen, protocolScreen) из Source 3 -->
+
+      <section class="screen" id="setupScreen">
+        <div class="panel">
+          <div class="panel-head"><h2>Yeni Yarış</h2></div>
+          <div class="panel-body">
+            <div class="form-grid">
+              <label>Yarışın adı <input id="competitionName" placeholder="Məsələn: Uşaq birinciliyi"></label>
+              <label>Şəhər <input id="competitionCity" placeholder="Bakı"></label>
+              <label>Tarix <input id="competitionDate" type="date"></label>
+            </div>
+            <div style="margin-top:16px">
+              <label>Çəki dərəcələri</label>
+              <div class="weights" id="weightChips"></div>
+              <div class="inline-add">
+                <input id="newWeightInput" inputmode="numeric" placeholder="Yeni çəki, kq">
+                <button class="ghost" id="addWeightBtn">Əlavə et</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <button class="primary" id="setupNextBtn">Növbəti</button>
+              <button class="secondary" id="cancelSetupBtn">Ləğv et</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="listScreen">
+        <div class="panel">
+          <div class="panel-head"><h2>Yarışlar</h2><button class="primary" id="newFromListBtn">Yeni Yarış</button></div>
+          <div class="panel-body"><div class="list" id="competitionsList"></div></div>
+        </div>
+      </section>
     </main>
   </div>
 
-  <!-- Модальное окно püşk -->
-  <div class="modal no-print" id="drawModal" aria-hidden="true">
-    <!-- Контент модалки из вашего Source 3... -->
-  </div>
-
   <script>
-    // Весь JS код из вашего Source 3 до функции installPwaBits() ...
     const STORE_KEY = 'agf_wrestling_competitions_v1';
-    // ... функции loadCompetitions, saveCompetitions, uid, currentCompetition, showScreen, goBack, renderWeights и т.д.
+    const DEFAULT_WEIGHTS = [25, 28, 32, 36, 40, 45, 50, 55, 60, 66];
+    
+    const state = {
+      competitions: JSON.parse(localStorage.getItem(STORE_KEY) || '[]'),
+      currentId: null,
+      tempWeights: [],
+      availableWeights: [...DEFAULT_WEIGHTS],
+      screen: 'home',
+      history: []
+    };
 
-    // ИСПРАВЛЕННЫЙ БЛОК: Защита от ошибок и авто-обновление PWA
+    const $ = (id) => document.getElementById(id);
+    const screens = { home: $('homeScreen'), setup: $('setupScreen'), list: $('listScreen') };
+
+    function saveCompetitions() { localStorage.setItem(STORE_KEY, JSON.stringify(state.competitions)); }
+
+    function showScreen(name) {
+      state.screen = name;
+      Object.entries(screens).forEach(([key, node]) => node.classList.toggle('active', key === name));
+    }
+
+    function goBack() { showScreen('home'); }
+
+    function resetSetup() {
+      state.currentId = null; state.tempWeights = [];
+      $('competitionName').value = ''; $('competitionCity').value = '';
+      renderWeights(); showScreen('setup');
+    }
+
+    function renderWeights() {
+      const root = $('weightChips'); if(!root) return;
+      root.innerHTML = '';
+      state.availableWeights.forEach(w => {
+        const lbl = document.createElement('label');
+        lbl.className = 'weight-check';
+        lbl.innerHTML = `<input type="checkbox" ${state.tempWeights.includes(w)?'checked':''}> <span>${w} kg</span>`;
+        lbl.querySelector('input').onclick = () => {
+          if (state.tempWeights.includes(w)) state.tempWeights = state.tempWeights.filter(x => x !== w);
+          else state.tempWeights.push(w);
+        };
+        root.appendChild(lbl);
+      });
+    }
+
+    function renderCompetitionList() {
+      const list = $('competitionsList'); if(!list) return;
+      list.innerHTML = state.competitions.length ? '' : '<div class="meta">Yarış tapılmadı</div>';
+      state.competitions.forEach(comp => {
+        const row = document.createElement('div');
+        row.className = 'competition-row';
+        row.innerHTML = `<div><strong>${comp.name}</strong><div class="meta">${comp.city}</div></div><button class="primary">Aç</button>`;
+        list.appendChild(row);
+      });
+    }
+
     function installPwaBits() {
       const manifest = {
-        name: 'AGF Yarış Protokolu',
-        short_name: 'AGF Protokol',
-        start_url: './index.html',
-        display: 'standalone',
-        background_color: '#ffffff',
-        theme_color: '#08285a',
-        icons: [
-          { src: "agf.webp", sizes: '192x192', type: 'image/webp' },
-          { src: "agf.webp", sizes: '512x512', type: 'image/webp' }
-        ]
+        name: 'AGF Yarış Protokolu', short_name: 'AGF Protokol', start_url: './index.html', display: 'standalone',
+        background_color: '#ffffff', theme_color: '#08285a',
+        icons: [{ src: "agf.webp", sizes: '192x192', type: 'image/webp' }, { src: "agf.webp", sizes: '512x512', type: 'image/webp' }]
       };
       const manifestUrl = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' }));
-      const link = document.createElement('link');
-      link.rel = 'manifest'; link.href = manifestUrl;
+      const link = document.createElement('link'); link.rel = 'manifest'; link.href = manifestUrl;
       document.head.appendChild(link);
-
       if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').then(reg => {
-            console.log('SW OK');
-            reg.onupdatefound = () => {
-              const installingWorker = reg.installing;
-              installingWorker.onstatechange = () => {
-                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  window.location.reload();
-                }
-              };
-            };
-          }).catch(err => console.log('SW Error', err));
-        });
+        navigator.serviceWorker.register('./sw.js').then(() => console.log('SW OK')).catch(err => console.log('SW Error', err));
       }
     }
 
-    // ГЛАВНЫЙ ЗАПУСК: Выполняется только после полной отрисовки HTML
+    // --- ВСЕ ПРИВЯЗКИ КНОПОК ПЕРЕМЕЩЕНЫ В САМЫЙ НИЗ ---
     window.addEventListener('load', () => {
       installPwaBits();
-      if (typeof renderWeights === 'function') renderWeights();
-
+      
       const safeBind = (id, event, fn) => {
         const el = document.getElementById(id);
         if (el) el.addEventListener(event, fn);
@@ -129,56 +208,15 @@
       safeBind('newCompetitionBtn', 'click', resetSetup);
       safeBind('newFromListBtn', 'click', resetSetup);
       safeBind('competitionsBtn', 'click', () => { renderCompetitionList(); showScreen('list'); });
-      safeBind('homeMarkBtn', 'click', () => { state.history = []; showScreen('home', { replace: true }); });
       safeBind('backNavBtn', 'click', goBack);
-      safeBind('printBtn', 'click', () => window.print());
-      
+      safeBind('cancelSetupBtn', 'click', goBack);
       safeBind('addWeightBtn', 'click', () => {
-        const input = document.getElementById('newWeightInput');
-        if (!input) return;
-        const value = Number(input.value.replace(',', '.'));
-        if (!value || state.tempWeights.includes(value)) return;
-        state.tempWeights.push(value);
-        state.availableWeights = [...new Set([...state.availableWeights, value])];
-        input.value = ''; renderWeights();
-      });
-
-      safeBind('setupNextBtn', 'click', () => {
-        const comp = createOrUpdateCompetition();
-        if (!comp) return;
-        const input = document.getElementById('athleteInput');
-        if (input) input.value = comp.rawAthletes || '';
-        renderCompetitionSummary(); showScreen('athletes');
-      });
-
-      safeBind('backToSetupBtn', 'click', () => {
-        const comp = currentCompetition();
-        if (comp) {
-          const name = document.getElementById('competitionName');
-          if (name) name.value = comp.name;
-          state.tempWeights = [...comp.weights]; renderWeights();
+        const val = Number($('newWeightInput').value);
+        if (val && !state.availableWeights.includes(val)) {
+          state.availableWeights.push(val); state.availableWeights.sort((a,b)=>a-b);
+          $('newWeightInput').value = ''; renderWeights();
         }
-        showScreen('setup');
       });
-
-      safeBind('splitWeightsBtn', 'click', () => {
-        const comp = currentCompetition();
-        const input = document.getElementById('athleteInput');
-        if (!input || !comp) return;
-        const parsed = parseAthletes(input.value, comp.weights);
-        comp.rawAthletes = input.value; comp.athletes = parsed.athletes;
-        saveCompetitions(); renderWeightProtocol(); showScreen('weights');
-      });
-
-      const list = document.getElementById('competitionsList');
-      if (list) {
-        list.addEventListener('click', (e) => {
-          if (e.target.dataset.open) {
-            state.currentId = e.target.dataset.open;
-            renderWeightProtocol(); showScreen('weights');
-          }
-        });
-      }
     });
   </script>
 </body>
