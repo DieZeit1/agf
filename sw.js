@@ -1,5 +1,10 @@
-const CACHE_NAME = 'agf-pwa-v101';
-const APP_SHELL = ['./', './index.html', './logo1.webp', './agf.webp'];
+const CACHE_NAME = 'agf-pwa-v102'; // Версия увеличена для обновления иконок у клиента
+const APP_SHELL = [
+  './',
+  './index.html',
+  './logo1.webp',
+  './agf.webp' // Новый основной логотип приложения
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -12,7 +17,9 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+      .then((keys) => Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      ))
       .then(() => self.clients.claim())
   );
 });
