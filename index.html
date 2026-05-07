@@ -312,6 +312,10 @@
       line-height: 1.5;
     }
 
+    .emergency-athlete-input {
+      min-height: 180px;
+    }
+
     .weights {
       display: grid;
       gap: 8px;
@@ -2023,6 +2027,7 @@
             <div id="weightGroups"></div>
             <div class="toolbar weight-actions" id="weightActions">
               <button class="primary" id="createProtocolBtn">Yarış Protokolu yarat</button>
+              <button class="secondary" id="addEmergencyAthletesBtn">İştirakçı əlavə et</button>
               <button class="secondary" id="weightPdfBtn">PDF</button>
               <button class="secondary" id="autoDrawBtn">Avtomatik püşk at</button>
               <button class="secondary" id="resetDrawBtn">Püşkü sıfırla</button>
@@ -2064,6 +2069,29 @@
           <button class="primary" id="saveDrawNumberBtn">Yadda saxla</button>
           <button class="secondary" id="nextDrawNumberBtn">Növbəti boş №</button>
           <button class="danger" id="clearDrawNumberBtn">Sil</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal no-print" id="addAthleteModal" aria-hidden="true">
+    <div class="draw-card" role="dialog" aria-modal="true" aria-labelledby="addAthleteTitle">
+      <div class="draw-card-head">
+        <div>
+          <h3 id="addAthleteTitle">İştirakçı əlavə et</h3>
+          <p>Unudulan iştirakçıları sətir-sətir əlavə edin.</p>
+        </div>
+        <button class="draw-close" id="closeAddAthleteModal" title="Bağla">×</button>
+      </div>
+      <div class="draw-card-body">
+        <label>İştirakçı siyahısı
+          <textarea class="emergency-athlete-input" id="addAthleteInput" spellcheck="false" placeholder="Əli Məmmədov 25 Neftçi 2012&#10;Rauf Quliyev 32 Zirvə&#10;Murad Əliyev 28 Təhsil"></textarea>
+        </label>
+        <p class="hint">Format əsas siyahı ilə eynidir: Ad Soyad Çəki Klub. Hər yeni iştirakçı öz çəkisində növbəti boş püşk nömrəsini alacaq.</p>
+        <div class="modal-error" id="addAthleteError"></div>
+        <div class="toolbar" style="margin:0">
+          <button class="primary" id="saveAddAthleteBtn">Əlavə et</button>
+          <button class="secondary" id="cancelAddAthleteBtn">Ləğv et</button>
         </div>
       </div>
     </div>
@@ -2744,6 +2772,110 @@
       comp.bracketOrders = {};
       saveCompetitions();
       renderWeightProtocol();
+    }
+
+    function openAddAthleteModal() {
+      $('addAthleteInput').value = '';
+      $('addAthleteError').textContent = '';
+      $('addAthleteModal').classList.add('active');
+      $('addAthleteModal').setAttribute('aria-hidden', 'false');
+      setTimeout(() => $('addAthleteInput').focus(), 0);
+    }
+
+    function closeAddAthleteModal() {
+      $('addAthleteModal').classList.remove('active');
+      $('addAthleteModal').setAttribute('aria-hidden', 'true');
+    }
+
+    function nextDrawNumberForWeight(comp, weight) {
+      const draws = comp.athletes
+        .filter((athlete) => athlete.weight === Number(weight) && Number.isInteger(athlete.draw))
+        .map((athlete) => athlete.draw);
+      return draws.length ? Math.max(...draws) + 1 : 1;
+    }
+
+    function hasCompletedResultForWeight(comp, weight) {
+      const needle = `_${weight}_`;
+      return Object.entries(comp.results || {}).some(([id, result]) => (
+        id.includes(needle) &&
+        result &&
+        result.p1 !== '' &&
+        result.p2 !== '' &&
+        Number(result.p1) !== Number(result.p2)
+      ));
+    }
+
+    function clearWeightResults(comp, weight) {
+      const needle = `_${weight}_`;
+      Object.keys(comp.results || {}).forEach((id) => {
+        if (id.includes(needle)) delete comp.results[id];
+      });
+    }
+
+    function appendRawAthleteLines(comp, athletes) {
+      const lines = athletes.map((athlete) => (
+        `${athlete.name} ${athlete.weight} ${athlete.club || ''}${athlete.yob ? ` ${athlete.yob}` : ''}`.trim()
+      ));
+      const current = (comp.rawAthletes || '').trim();
+      comp.rawAthletes = [current, ...lines].filter(Boolean).join('\n');
+    }
+
+    function saveEmergencyAthletes() {
+      const comp = currentCompetition();
+      if (!comp) return;
+      const raw = $('addAthleteInput').value.trim();
+      if (!raw) {
+        $('addAthleteError').textContent = 'Əlavə ediləcək iştirakçı siyahısını yazın.';
+        return;
+      }
+      const parsed = parseAthletes(raw, comp.weights);
+      if (parsed.errors.length) {
+        $('addAthleteError').textContent = parsed.errors.slice(0, 3).join(' · ');
+        return;
+      }
+      if (!parsed.athletes.length) {
+        $('addAthleteError').textContent = 'Əlavə ediləcək iştirakçı tapılmadı.';
+        return;
+      }
+      const affectedWeights = [...new Set(parsed.athletes.map((athlete) => athlete.weight))].sort((a, b) => a - b);
+      const overweight = affectedWeights
+        .map((weight) => ({
+          weight,
+          count: comp.athletes.filter((athlete) => athlete.weight === weight).length + parsed.athletes.filter((athlete) => athlete.weight === weight).length
+        }))
+        .filter((item) => item.count > 32);
+      if (overweight.length) {
+        $('addAthleteError').textContent = `Maksimum 32 iştirakçı dəstəklənir: ${overweight.map((item) => `${item.weight} kg (${item.count})`).join(', ')}.`;
+        return;
+      }
+      const weightsWithResults = affectedWeights.filter((weight) => hasCompletedResultForWeight(comp, weight));
+      if (weightsWithResults.length) {
+        const ok = confirm(`Bu çəkilər üzrə nəticələr sıfırlanacaq: ${weightsWithResults.map((weight) => `${weight} kg`).join(', ')}. Davam edilsin?`);
+        if (!ok) return;
+      }
+      const nextDraws = Object.fromEntries(affectedWeights.map((weight) => [weight, nextDrawNumberForWeight(comp, weight)]));
+      parsed.athletes.forEach((athlete) => {
+        athlete.seed = null;
+        athlete.seedNumber = null;
+        athlete.draw = nextDraws[athlete.weight];
+        nextDraws[athlete.weight] += 1;
+        comp.athletes.push(athlete);
+      });
+      appendRawAthleteLines(comp, parsed.athletes);
+      affectedWeights.forEach((weight) => {
+        clearWeightResults(comp, weight);
+        clearBracketOrder(comp, weight);
+        if (comp.manualBracketOrders) delete comp.manualBracketOrders[String(weight)];
+      });
+      saveCompetitions();
+      closeAddAthleteModal();
+      if (state.screen === 'protocol') {
+        renderProtocolTabs();
+        renderProtocolContent();
+      } else {
+        renderWeightProtocol();
+      }
+      $('weightStatus').textContent = `${parsed.athletes.length} iştirakçı əlavə edildi.`;
     }
 
     function clearBracketOrder(comp, weight) {
@@ -4801,6 +4933,14 @@
       if (event.key === 'Enter') saveDrawNumber();
       if (event.key === 'Escape') closeDrawCard();
     });
+
+    $('addEmergencyAthletesBtn').addEventListener('click', openAddAthleteModal);
+    $('closeAddAthleteModal').addEventListener('click', closeAddAthleteModal);
+    $('cancelAddAthleteBtn').addEventListener('click', closeAddAthleteModal);
+    $('addAthleteModal').addEventListener('click', (event) => {
+      if (event.target === $('addAthleteModal')) closeAddAthleteModal();
+    });
+    $('saveAddAthleteBtn').addEventListener('click', saveEmergencyAthletes);
 
     $('autoDrawBtn').addEventListener('click', autoAssignDraws);
     $('resetDrawBtn').addEventListener('click', resetDraws);
