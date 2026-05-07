@@ -2872,13 +2872,35 @@
       });
     }
 
+    function currentProtocolView() {
+      const activeButton = document.querySelector('[data-protocol-view].active');
+      const view = activeButton?.dataset.protocolView || state.protocolView || 'flow';
+      state.protocolView = view;
+      return view;
+    }
+
+    function applyProtocolPrintMode() {
+      document.body.classList.remove('print-grid', 'print-compact', 'print-list', 'print-results');
+      if (state.screen !== 'protocol') return;
+      const view = currentProtocolView();
+      if (view === 'list') {
+        document.body.classList.add('print-list');
+      } else if (view === 'results') {
+        document.body.classList.add('print-results');
+      } else {
+        document.body.classList.add(state.bracketView === 'grid' ? 'print-grid' : 'print-compact');
+        if (state.bracketView === 'grid') requestAnimationFrame(drawBracketConnectors);
+      }
+    }
+
     function printActiveProtocolView() {
+      applyProtocolPrintMode();
       window.print();
     }
 
     async function exportActiveProtocolPdf() {
-      if (state.protocolView !== 'flow') {
-        alert('PDF hazırda yalnız "YARIŞIN GEDİŞİ" bölməsi üçün yaradılır.');
+      if (currentProtocolView() !== 'flow') {
+        printActiveProtocolView();
         return;
       }
       const sheetSvg = document.querySelector('#scheduleArea .print-bracket-sheet svg');
@@ -4126,6 +4148,21 @@
       const fromSlot = bracketEntrySlot(rounds, from.matchId, from.side);
       const toSlot = bracketEntrySlot(rounds, to.matchId, to.side);
       if (fromSlot === null || toSlot === null) return;
+      if (to.athleteId) {
+        if (from.athleteId === to.athleteId) return;
+        const fromAthlete = comp.athletes.find((athlete) => athlete.id === from.athleteId);
+        const toAthlete = comp.athletes.find((athlete) => athlete.id === to.athleteId);
+        if (!fromAthlete || !toAthlete || fromAthlete.weight !== state.activeWeight || toAthlete.weight !== state.activeWeight) return;
+        const fromDraw = fromAthlete.draw;
+        fromAthlete.draw = toAthlete.draw;
+        toAthlete.draw = fromDraw;
+        delete comp.bracketOrders[key];
+        if (comp.manualBracketOrders) delete comp.manualBracketOrders[key];
+        clearActiveWeightResults(comp);
+        saveCompetitions();
+        renderProtocolContent();
+        return;
+      }
       const tmp = slots[toSlot];
       slots[toSlot] = slots[fromSlot];
       slots[fromSlot] = tmp || null;
@@ -4690,17 +4727,7 @@
       renderProtocolContent();
     });
     window.addEventListener('beforeprint', () => {
-      document.body.classList.remove('print-grid', 'print-compact', 'print-list', 'print-results');
-      if (state.screen === 'protocol') {
-        if (state.protocolView === 'list') {
-          document.body.classList.add('print-list');
-        } else if (state.protocolView === 'results') {
-          document.body.classList.add('print-results');
-        } else {
-          document.body.classList.add(state.bracketView === 'grid' ? 'print-grid' : 'print-compact');
-          if (state.bracketView === 'grid') requestAnimationFrame(drawBracketConnectors);
-        }
-      }
+      applyProtocolPrintMode();
     });
     window.addEventListener('afterprint', () => {
       document.body.classList.remove('print-grid', 'print-compact', 'print-list', 'print-results');
