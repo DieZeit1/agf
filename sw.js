@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agf-wrestling-pwa-v64';
+const CACHE_NAME = 'agf-wrestling-pwa-v65';
 const APP_SHELL = [
   './',
   './index.html',
