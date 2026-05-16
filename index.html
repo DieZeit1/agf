@@ -3447,8 +3447,7 @@
       return `
         <rect x="${x}" y="${y}" width="${width}" height="${height}" fill="#fff" stroke="#111" stroke-width="${options.stroke || 1.1}"/>
         ${drawNumber && drawCellW > 4 ? `
-          <text x="${x + drawCellW / 2}" y="${y + height * 0.43}" text-anchor="middle" font-size="${options.drawFontSize || 6.4}" font-weight="800">№</text>
-          <text x="${x + drawCellW / 2}" y="${y + height - 2.2}" text-anchor="middle" font-size="${options.drawNumberFontSize || 6.4}" font-weight="800">${escapeHtml(drawNumber)}</text>
+          <text x="${x + drawCellW / 2}" y="${y + height / 2 + 4}" text-anchor="middle" font-size="${options.drawNumberFontSize || 11}" font-weight="800">${escapeHtml(drawNumber)}</text>
         ` : ''}
         ${printColorCellSvg(colorX, y, colorW, height, athlete ? color : '#fff')}
         ${showClub ? `<line x1="${clubSplit}" y1="${y}" x2="${clubSplit}" y2="${y + height}" stroke="#111" stroke-width="0.85"/>` : ''}
