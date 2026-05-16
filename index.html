@@ -3453,7 +3453,7 @@
         ${showClub ? `<line x1="${clubSplit}" y1="${y}" x2="${clubSplit}" y2="${y + height}" stroke="#111" stroke-width="0.85"/>` : ''}
         <line x1="${scoreX}" y1="${y}" x2="${scoreX}" y2="${y + height}" stroke="#111" stroke-width="0.85"/>
         ${showName ? `<text x="${nameX}" y="${y + height - 3.8}" font-size="${nameFit.fontSize}" font-weight="800">${nameFit.text}</text>` : ''}
-        ${showClub ? `<text x="${clubSplit + 5}" y="${y + height - 4}" font-size="${clubFit.fontSize}">${clubFit.text}</text>` : ''}
+        ${showClub ? `<text x="${clubSplit + 5}" y="${y + height - 4}" font-size="${clubFit.fontSize}" font-weight="700">${clubFit.text}</text>` : ''}
         ${printScoreGridSvg(scoreX, y, height, scoreValue || '', '')}
       `;
     }
@@ -3500,7 +3500,7 @@
       const secondY = y + row + rowGap;
       const clubSplit = x + width - 105;
       const nameFontMax = Math.min(16, Math.max(9.6, row * 0.72));
-      const clubFontMax = Math.min(12, Math.max(7.4, row * 0.55));
+      const clubFontMax = Math.min(13.5, Math.max(8, row * 0.58));
       const a = isAthlete(match.a) ? match.a : null;
       const b = isAthlete(match.b) ? match.b : null;
       return `
