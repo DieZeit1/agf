@@ -3442,8 +3442,8 @@
       const showName = options.showName !== false;
       const nameAvailable = Math.max(8, (showClub ? clubSplit : scoreX) - nameX - 5);
       const clubAvailable = Math.max(8, scoreX - clubSplit - 8);
-      const nameFit = fittedSvgText(name, nameAvailable, options.fontSize || 7.2, options.minFontSize || 6, nameLimit);
-      const clubFit = fittedSvgText(athlete?.club || '', clubAvailable, options.clubFontSize || 6.4, options.minClubFontSize || 5.6, clubLimit);
+      const nameFit = fittedSvgText(name, nameAvailable, options.fontSize || 9, options.minFontSize || 6, nameLimit);
+      const clubFit = fittedSvgText(athlete?.club || '', clubAvailable, options.clubFontSize || 8, options.minClubFontSize || 5.6, clubLimit);
       return `
         <rect x="${x}" y="${y}" width="${width}" height="${height}" fill="#fff" stroke="#111" stroke-width="${options.stroke || 1.1}"/>
         ${drawNumber && drawCellW > 4 ? `
